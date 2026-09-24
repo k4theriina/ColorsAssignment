@@ -1,0 +1,7 @@
+server-copy/
+api/config.php
+.env
+.DS_Store
+*.log
+.vscode/
+.idea/
