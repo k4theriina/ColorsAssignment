@@ -1,0 +1,140 @@
+@startuml class
+' Class Diagram - COLORS LAMP web application
+' The code is procedural (no PHP/JS classes), so each page, script and
+' table is modeled as a stereotyped class. Members match the real
+' globals and functions in the source files.
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "Frontend (public/)" {
+  class "index.html" as IndexPage <<page>> {
+    loginName : input
+    loginPassword : input
+    loginResult : span
+    --
+    onclick loginButton -> doLogin()
+  }
+
+  class "color.html" as ColorPage <<page>> {
+    searchText : input
+    colorSearchResult : span
+    colorList : p
+    colorText : input
+    colorAddResult : span
+    --
+    DOMContentLoaded -> readCookie()
+    onclick logoutButton -> doLogout()
+    onclick searchColorButton -> searchColor()
+    onclick addColorButton -> addColor()
+  }
+
+  class "code.js" as CodeJS <<script>> {
+    + urlBase : string = "/LAMPAPI" {readOnly}
+    + extension : string = "php" {readOnly}
+    + userId : int = 0
+    + firstName : string = ""
+    + lastName : string = ""
+    --
+    + doLogin() : void
+    + saveCookie() : void
+    + readCookie() : void
+    + doLogout() : void
+    + addColor() : void
+    + searchColor() : void
+  }
+
+  class "md5.js" as MD5JS <<script>> {
+    + md5(str) : string
+  }
+}
+
+package "Backend API (api/ served as /LAMPAPI)" {
+  class "Login.php" as LoginPHP <<endpoint>> {
+    - inData : array
+    - id : int
+    - firstName : string
+    - lastName : string
+    --
+    - getRequestInfo() : array
+    - sendResultInfoAsJson(obj) : void
+    - returnWithError(err) : void
+    - returnWithInfo(firstName, lastName, id) : void
+  }
+
+  class "SearchColors.php" as SearchPHP <<endpoint>> {
+    - inData : array
+    - searchResults : string
+    - searchCount : int
+    --
+    - getRequestInfo() : array
+    - sendResultInfoAsJson(obj) : void
+    - returnWithError(err) : void
+    - returnWithInfo(searchResults) : void
+  }
+
+  class "AddColor.php" as AddPHP <<endpoint>> {
+    - inData : array
+    - color : string
+    - userId : string
+    --
+    - getRequestInfo() : array
+    - sendResultInfoAsJson(obj) : void
+    - returnWithError(err) : void
+  }
+
+  class "config.php" as Config <<config>> {
+    + DB_HOST : string
+    + DB_USER : string
+    + DB_PASS : string
+    + DB_NAME : string
+  }
+
+  class mysqli <<PHP built-in>> {
+    + connect_error : string
+    + prepare(query) : mysqli_stmt
+    + close() : bool
+  }
+}
+
+package "Database (MySQL)" {
+  entity Users <<table>> {
+    * ID : INT <<PK>>
+    --
+    firstName : VARCHAR
+    lastName : VARCHAR
+    Login : VARCHAR
+    Password : VARCHAR
+  }
+
+  entity Colors <<table>> {
+    * ID : INT <<PK>>
+    --
+    Name : VARCHAR
+    UserID : INT <<FK>>
+  }
+}
+
+IndexPage ..> CodeJS : loads
+IndexPage ..> MD5JS : loads (unused)
+ColorPage ..> CodeJS : loads
+
+CodeJS ..> LoginPHP : POST JSON\n{login, password}
+CodeJS ..> SearchPHP : POST JSON\n{search, userId}
+CodeJS ..> AddPHP : POST JSON\n{color, userId}
+
+LoginPHP ..> Config : require_once
+SearchPHP ..> Config : require_once
+AddPHP ..> Config : require_once
+
+LoginPHP ..> mysqli : creates
+SearchPHP ..> mysqli : creates
+AddPHP ..> mysqli : creates
+
+LoginPHP ..> Users : SELECT
+SearchPHP ..> Colors : SELECT
+AddPHP ..> Colors : INSERT
+
+Users "1" -- "0..*" Colors : owns >
+
+@enduml

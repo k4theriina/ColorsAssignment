@@ -1,0 +1,79 @@
+@startuml activity
+' Activity Diagram - COLORS LAMP web application
+' Covers the full session: login -> color page -> search/add -> logout.
+
+|Browser (code.js)|
+start
+:Open index.html;
+:Enter username and password;
+:Click "Do It" -> doLogin();
+:Send POST {login, password}\nto /LAMPAPI/Login.php;
+
+|PHP API|
+:Connect to MySQL (config.php);
+if (Connection error?) then (yes)
+  :Return {"error": connect_error}\n(no id field);
+else (no)
+  :SELECT ID, firstName, lastName\nFROM Users WHERE Login=? AND Password=?;
+  if (Row found?) then (yes)
+    :Return {id, firstName, lastName, error: ""};
+  else (no)
+    :Return {id: 0, error: "No Records Found"};
+  endif
+endif
+
+|Browser (code.js)|
+if (id < 1?) then (yes)
+  :Show "User/Password combination incorrect";
+  stop
+else (no)
+  :saveCookie() (expires in 20 minutes);
+  note right
+    On a DB connection error, id is undefined and
+    (undefined < 1) is false, so the code also
+    takes this branch (no error is shown).
+  end note
+  :Redirect to color.html;
+endif
+
+:readCookie() on page load;
+if (userId found in cookie?) then (no)
+  :Redirect to index.html;
+  stop
+else (yes)
+endif
+
+repeat
+  :Choose an action;
+  switch (Action?)
+  case (Search Color)
+    :searchColor(): POST {search, userId}\nto /LAMPAPI/SearchColors.php;
+    |PHP API|
+    :SELECT Name FROM Colors\nWHERE Name LIKE %search% AND UserID=?;
+    if (Any matches?) then (yes)
+      :Return {results: [...], error: ""};
+      |Browser (code.js)|
+      :Show "Color(s) has been retrieved";
+      :Render color list in <p id="colorList">;
+    else (no)
+      |PHP API|
+      :Return {error: "No Records Found"};
+      |Browser (code.js)|
+      :Show "Color(s) has been retrieved"\n(list not updated: response has no results);
+    endif
+  case (Add Color)
+    :addColor(): POST {color, userId}\nto /LAMPAPI/AddColor.php;
+    |PHP API|
+    :INSERT INTO Colors (UserId, Name) VALUES (?, ?);
+    :Return {error: ""};
+    |Browser (code.js)|
+    :Show "Color has been added";
+  case (Log Out)
+    :doLogout(): clear variables\nand expire cookie;
+    :Redirect to index.html;
+    stop
+  endswitch
+repeat while (Stay on color page?) is (yes)
+stop
+
+@enduml
