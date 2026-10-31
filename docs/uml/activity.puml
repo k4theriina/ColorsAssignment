@@ -37,10 +37,10 @@ else (no)
 endif
 
 :readCookie() on page load;
-if (userId found in cookie?) then (no)
+if (userId < 0?\n(no userId in cookie)) then (yes)
   :Redirect to index.html;
   stop
-else (yes)
+else (no)
 endif
 
 repeat

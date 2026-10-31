@@ -14,7 +14,6 @@ rectangle "COLORS Web Application" {
   usecase "Log In" as UC_Login
   usecase "Validate Credentials\n(Login.php)" as UC_Validate
   usecase "Save Session Cookie" as UC_SaveCookie
-  usecase "Check Session Cookie\n(readCookie on color.html)" as UC_CheckSession
   usecase "Search Colors" as UC_Search
   usecase "Add Color" as UC_Add
   usecase "Log Out" as UC_Logout
@@ -30,9 +29,6 @@ UC_Login ..> UC_Validate : <<include>>
 UC_Login ..> UC_SaveCookie : <<include>>
 UC_LoginError ..> UC_Login : <<extend>>\n[id < 1]
 
-UC_Search ..> UC_CheckSession : <<include>>
-UC_Add ..> UC_CheckSession : <<include>>
-
 UC_Validate --> db
 UC_Search --> db
 UC_Add --> db
@@ -40,6 +36,12 @@ UC_Add --> db
 note right of UC_Search
   Partial (LIKE '%text%') match,
   limited to the logged-in user's colors
+end note
+
+note bottom of UC_Add
+  Precondition for Search Colors, Add Color and Log Out:
+  user is on color.html, which runs readCookie() once on
+  page load and redirects to index.html if userId < 0
 end note
 
 note right of UC_Logout

@@ -76,7 +76,7 @@ package "Backend API (api/ served as /LAMPAPI)" {
   class "AddColor.php" as AddPHP <<endpoint>> {
     - inData : array
     - color : string
-    - userId : string
+    - userId : int
     --
     - getRequestInfo() : array
     - sendResultInfoAsJson(obj) : void
@@ -111,7 +111,7 @@ package "Database (MySQL)" {
     * ID : INT <<PK>>
     --
     Name : VARCHAR
-    UserID : INT <<FK>>
+    UserID : INT (refers to Users.ID)
   }
 }
 
