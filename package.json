@@ -1,0 +1,32 @@
+{
+  "name": "colors-lamp",
+  "version": "1.0.0",
+  "description": "Colors LAMP app - Node is used only for linting tooling",
+  "scripts": {
+    "lint": "npm run lint:html && npm run lint:css && npm run lint:js",
+    "lint:html": "htmlhint \"public/**/*.html\"",
+    "lint:css": "stylelint \"public/**/*.css\"",
+    "lint:js": "eslint public/js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/k4theriina/ColorsAssignment.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/k4theriina/ColorsAssignment/issues"
+  },
+  "homepage": "https://github.com/k4theriina/ColorsAssignment#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
+    "htmlhint": "^1.9.2",
+    "stylelint": "^17.16.0",
+    "stylelint-config-standard": "^40.0.0"
+  },
+  "private": true
+}
