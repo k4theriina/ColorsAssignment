@@ -167,6 +167,23 @@ All endpoints expect **HTTP POST** with a **JSON** body and return JSON.
 | `/LAMPAPI/SearchColors.php` | `search`, `userId` | Return matching color names for that user |
 | `/LAMPAPI/AddColor.php` | `color`, `userId` | Insert a new color for that user |
 
+## Testing and CI
+
+Node.js is used only for tooling (linters and the Jest test runner), not to run the app.
+
+- **Unit tests** (`tests/unit/`): front-end tests for `public/js/code.js` in a simulated browser (Jest + jsdom), covering color validation, result formatting, and what `addColor`/`searchColor` send and render.
+- **Integration tests** (`tests/integration/`): real HTTP requests to the PHP endpoints backed by MySQL, checking status, content type, and JSON structure.
+
+```bash
+npm ci
+npm run lint
+npm run test:unit
+# Needs the API served by PHP against a database seeded with tests/fixtures/schema.sql:
+API_BASE_URL=http://127.0.0.1:8000 npm run test:integration
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint, unit tests, and integration tests on every push and pull request. The integration job starts a MySQL service container, seeds it, and serves `api/` with PHP's built-in server.
+
 ## Assumptions and limitations
 
 - This app does **not** create accounts; you must seed users in MySQL yourself.

@@ -15,6 +15,8 @@ export default [
       globals: {
         ...globals.browser,
         md5: "readonly",
+        // Only used by the guarded `module.exports` at the end of code.js (for Jest).
+        module: "readonly",
       },
     },
     rules: {
@@ -23,6 +25,18 @@ export default [
       eqeqeq: "error",
       "no-var": "error",
       "prefer-const": "error",
+    },
+  },
+  {
+    files: ["tests/**/*.js", "jest.config.js"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+        ...globals.browser,
+      },
     },
   },
 ];

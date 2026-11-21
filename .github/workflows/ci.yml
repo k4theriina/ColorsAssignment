@@ -1,0 +1,122 @@
+name: CI
+
+# Node.js is used only for tooling (linters + Jest test runner).
+# The application itself is served by PHP and backed by MySQL, as in production (LAMP).
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (tooling only)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install tools
+        run: npm ci
+
+      - name: Lint HTML (HTMLHint)
+        run: npm run lint:html
+
+      - name: Lint CSS (Stylelint)
+        run: npm run lint:css
+
+      - name: Lint JavaScript (ESLint)
+        run: npm run lint:js
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (tooling only)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install tools
+        run: npm ci
+
+      - name: Run front-end unit tests (Jest + jsdom)
+        run: npm run test:unit
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: colors_test
+          MYSQL_USER: colors_test
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USER: colors_test
+      DB_PASS: test_password
+      DB_NAME: colors_test
+      API_BASE_URL: http://127.0.0.1:8000
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mysqli
+
+      - name: Set up Node.js (test runner only)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install tools
+        run: npm ci
+
+      - name: Create test database schema and seed data
+        run: mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < tests/fixtures/schema.sql
+
+      - name: Write API config for the test database
+        run: |
+          cat > api/config.php <<PHP
+          <?php
+          \$DB_HOST = '$DB_HOST';
+          \$DB_USER = '$DB_USER';
+          \$DB_PASS = '$DB_PASS';
+          \$DB_NAME = '$DB_NAME';
+          PHP
+
+      - name: Start PHP built-in server for the API
+        run: |
+          php -S 127.0.0.1:8000 -t api > php-server.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -s -o /dev/null http://127.0.0.1:8000/ && exit 0
+            sleep 0.5
+          done
+          echo "PHP server did not start"; cat php-server.log; exit 1
+
+      - name: Run API integration tests (Jest)
+        run: npm run test:integration
+
+      - name: Show PHP server log
+        if: always()
+        run: cat php-server.log

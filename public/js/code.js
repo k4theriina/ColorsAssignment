@@ -5,6 +5,30 @@ let userId = 0;
 let firstName = "";
 let lastName = "";
 
+// Returns an error message for an invalid color name, or "" if it is valid.
+function validateColorName(name)
+{
+	if( typeof name !== "string" || name.trim().length === 0 )
+	{
+		return "Please enter a color name";
+	}
+	if( name.trim().length > 50 )
+	{
+		return "Color name must be 50 characters or fewer";
+	}
+	return "";
+}
+
+// Builds the HTML shown for a list of color search results.
+function formatColorList(results)
+{
+	if( !Array.isArray(results) )
+	{
+		return "";
+	}
+	return results.join("<br />\r\n");
+}
+
 function doLogin()
 {
 	userId = 0;
@@ -113,7 +137,14 @@ function addColor()
 	const newColor = document.getElementById("colorText").value;
 	document.getElementById("colorAddResult").innerHTML = "";
 
-	const tmp = {color:newColor,userId:userId};
+	const validationError = validateColorName(newColor);
+	if( validationError !== "" )
+	{
+		document.getElementById("colorAddResult").innerHTML = validationError;
+		return;
+	}
+
+	const tmp = {color:newColor.trim(),userId:userId};
 	const jsonPayload = JSON.stringify( tmp );
 
 	const url = urlBase + '/AddColor.' + extension;
@@ -143,8 +174,6 @@ function searchColor()
 {
 	const srch = document.getElementById("searchText").value;
 	document.getElementById("colorSearchResult").innerHTML = "";
-	
-	let colorList = "";
 
 	const tmp = {search:srch,userId:userId};
 	const jsonPayload = JSON.stringify( tmp );
@@ -162,17 +191,8 @@ function searchColor()
 			{
 				document.getElementById("colorSearchResult").innerHTML = "Color(s) has been retrieved";
 				const jsonObject = JSON.parse( xhr.responseText );
-				
-				for( let i=0; i<jsonObject.results.length; i++ )
-				{
-					colorList += jsonObject.results[i];
-					if( i < jsonObject.results.length - 1 )
-					{
-						colorList += "<br />\r\n";
-					}
-				}
-				
-				document.getElementsByTagName("p")[0].innerHTML = colorList;
+
+				document.getElementsByTagName("p")[0].innerHTML = formatColorList(jsonObject.results);
 			}
 		};
 		xhr.send(jsonPayload);
@@ -182,4 +202,10 @@ function searchColor()
 		document.getElementById("colorSearchResult").innerHTML = err.message;
 	}
 	
+}
+
+// Expose functions to Jest (Node). Browsers have no `module`, so this is skipped there.
+if( typeof module !== "undefined" && module.exports )
+{
+	module.exports = { validateColorName, formatColorList, addColor, searchColor, readCookie };
 }
